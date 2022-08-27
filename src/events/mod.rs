@@ -4,42 +4,38 @@ use std::os::unix::io::{RawFd, AsRawFd};
 use std::mem;
 
 mod reader;
-mod codes;
+mod inotify;
+mod poll;
 
 pub use reader::*;
-pub use codes::*;
+pub use inotify::*;
+pub use poll::*;
 
-
-extern "C" {
-    static EVIOCGRAB_: c_ulong;
-    fn ioctl(fd: RawFd, request: c_ulong, ...) -> c_int;
-    fn poll(fds: *const PollFd, nfds: c_ulong, timeout: c_int) -> c_int;
-}
-
-
-fn set_grab(file: &File, enable_grab: bool) {
-    const GRAB: c_int = 1;
-    const UNGRAB: c_int = 0;
-
-    unsafe {
-        if enable_grab {
-            ioctl(file.as_raw_fd(), EVIOCGRAB_, GRAB)
-        } else {
-            ioctl(file.as_raw_fd(), EVIOCGRAB_, UNGRAB)
-        }
-    };
-}
-
-/// POSIX pollfd struct
+// POSIX pollfd struct
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct PollFd {
     fd: c_int,
     events: c_short,
     revents: c_short
 }
 
-/// Linux timeval struct
+impl PollFd {
+    fn new(fd: c_int) -> Self {
+        Self {
+            fd,
+            // listen for every event type
+            events: 0b111_1111_1111_1111,
+            revents: 0
+        }
+    }
+
+    fn has_event(&self) -> bool {
+        return self.revents != 0;
+    }
+}
+
+// Linux timeval struct
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Timeval {
@@ -47,7 +43,7 @@ pub struct Timeval {
     tv_usec: i64
 }
 
-/// Linux input_event struct
+// Linux input_event struct
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct InputEvent {
@@ -58,3 +54,12 @@ pub struct InputEvent {
 }
 
 type InputEventBuf = [u8; mem::size_of::<InputEvent>()];
+
+
+// enum representing the types of inotify events we care about:
+// when files are created and when they are removed.
+#[derive(Debug, Copy, Clone)]
+pub enum InotifyEventKind {
+    Created,
+    Removed
+}
