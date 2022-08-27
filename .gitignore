@@ -3,3 +3,4 @@ gede2.ini
 actions/obj
 actions/src/*
 actions/lib/
+actions/.makerc
