@@ -11,7 +11,7 @@ obj/%.o: %.c
 
 lib/obj.so: $(obj)
 	@mkdir -p lib
-	$(CC) -shared $(CFLAGS) $^ -o $@
+	$(CC) -shared $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 .PHONY: clean
 clean:
