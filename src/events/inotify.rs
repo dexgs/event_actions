@@ -20,8 +20,6 @@ extern "C" {
     fn inotify_init() -> c_int;
     fn inotify_add_watch(fd: c_int, pathname: *const c_char, mask: u32) -> c_int;
     fn inotify_rm_watch(fd: c_int, wd: c_int) -> c_int;
-
-    fn error() -> *const c_char;
 }
 
 #[repr(C)]
@@ -72,9 +70,7 @@ impl InotifyWatcher {
             inotify_init()
         };
         if fd < 0 {
-            return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("inotify_init: {:?}", error_msg())));
+            return Err(Error::new(ErrorKind::Other, "inotify_init"));
         }
 
         // set non-blocking mode so reads fail immediately if there isn't an
@@ -83,9 +79,7 @@ impl InotifyWatcher {
             fcntl(fd, F_SETFL_, O_NONBLOCK_)
         };
         if fcntl_err < 0 {
-            return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("fcntl: {:?}", error_msg())));
+            return Err(Error::new(ErrorKind::Other, "fcntl"));
         }
 
         let file = unsafe {
@@ -99,9 +93,7 @@ impl InotifyWatcher {
             inotify_add_watch(fd, path.as_ptr(), IN_CREATE_ | IN_DELETE_)
         };
         if wd < 0 {
-            return Err(Error::new(
-                    ErrorKind::Other,
-                    format!("inotify_add_watch: {:?}", error_msg())));
+            return Err(Error::new(ErrorKind::Other, "inotify_add_watch"));
         }
 
         let watcher = Self {
@@ -125,13 +117,6 @@ impl InotifyWatcher {
             },
             Err(_) => None
         }
-    }
-}
-
-// wrap reading message for errno
-fn error_msg() -> &'static CStr {
-    unsafe {
-        CStr::from_ptr(error())
     }
 }
 
