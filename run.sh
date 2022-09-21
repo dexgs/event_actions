@@ -2,4 +2,4 @@
 cd `dirname $0`
 
 make -sC actions
-cargo -q run --release -- actions/lib/obj.so
+exec cargo -q run --release -- actions/lib/obj.so
