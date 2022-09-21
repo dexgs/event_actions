@@ -6,6 +6,9 @@ This software lets you run arbitrary logic which responds to inputs from
 
 Create a shared object file which defines the following functions:
 
+(A Makefile is provided in the `actions/` directory which compiles an object
+ from the source files in `actions/src/`)
+
 ## `device_update`
 ```c
 int device_update(bool is_created, const char * name, size_t index);
@@ -27,6 +30,15 @@ The value returned by `device_update` determines how to handle the device:
  - `2`: input events will be read from this device **and** the device will be
    "grabbed," i.e. inputs to the device will not be read by other programs.
 
+If you don't want to use the `int` values, you can use this enum definition:
+```c
+enum device_action {
+  IGNORE = 0,
+  READ = 1,
+  GRAB = 2
+};
+```
+
 
 ## `handle_input`
 ```c
@@ -40,10 +52,10 @@ The `input_event` struct is defined as follows:
 
 ```c
 struct input_event {
-        struct timeval time;
-        unsigned short type;
-        unsigned short code;
-        unsigned int value;
+  struct timeval time;
+  unsigned short type;
+  unsigned short code;
+  unsigned int value;
 };
 ```
 
