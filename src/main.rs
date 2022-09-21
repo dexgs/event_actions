@@ -25,7 +25,7 @@ fn main() {
         }
     }
 
-    let mut buf = Vec::with_capacity(2048);
+    let mut device_name_buf = Vec::with_capacity(2048);
     loop {
         let mut events = poller.poll();
 
@@ -34,19 +34,22 @@ fn main() {
         }
 
         if let Some((state, name)) = events.inotify_event().take() {
-            buf.clear();
-            buf.extend_from_slice(name.to_bytes());
+            device_name_buf.clear();
+            device_name_buf.extend_from_slice(name.to_bytes());
 
-            let name = unsafe {
-                CStr::from_bytes_with_nul_unchecked(&buf)
+            let device_name = unsafe {
+                CStr::from_bytes_with_nul_unchecked(&device_name_buf)
             };
 
-            device_update(&mut poller, state, name, &handler_object);
+            device_update(&mut poller, state, device_name, &handler_object);
         }
     }
 }
 
-fn device_update(poller: &mut EventPoller, state: InotifyEventKind, name: &CStr, handler_object: &dlfcn::Object) {
+fn device_update(
+    poller: &mut EventPoller, state: InotifyEventKind,
+    name: &CStr, handler_object: &dlfcn::Object)
+{
     let name_str = name.to_str().unwrap();
     let name_str = name_str.split_once('\0').map(|s| s.0).unwrap_or(name_str);
 
