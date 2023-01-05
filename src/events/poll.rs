@@ -65,7 +65,7 @@ impl EventPoller {
             watcher: &mut self.watcher,
             readers: &mut self.readers,
             fds: &self.fds,
-            index: 0
+            start_index: 0
         }
     }
 
@@ -159,21 +159,19 @@ pub struct EventIterator<'a> {
     watcher: &'a mut InotifyWatcher,
     readers: &'a mut [EventReader],
     fds: &'a [PollFd],
-    index: usize
+    start_index: usize
 }
 
 impl<'a> Iterator for EventIterator<'a> {
     type Item = (InputEvent, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.index < self.readers.len() {
-            let i = self.index;
-            self.index += 1;
-
+        for i in self.start_index..self.readers.len() {
             if self.fds[i].has_event() {
-                let event = self.readers[i].next();
-                if let Some(event) = event {
-                    return Some((event, i));
+                let event = self.readers[i].next().map(|event| (event, i));
+                if event.is_some() {
+                    self.start_index = i + 1;
+                    return event;
                 }
             }
         }
